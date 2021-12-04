@@ -20,10 +20,17 @@ namespace Allumettes
             HARD = 2
         }
 
-        public enum Winner
+        public enum Joueurs
         {
             PLAYER1 = 0,
             IA = 1,
+            PLAYER2 = 2
+        }
+
+        public enum GameMode
+        {
+            PVIA= 0, // mode contre l'IA
+            PVP = 1 // Mode joueur contre joueur
         }
         #endregion
 
@@ -32,22 +39,36 @@ namespace Allumettes
         static void Main(string[] args)
         {
             State m_gameState = State.PLAYING;
-            Winner m_winner;
-            
+            Joueurs m_winner;
+
+            DisplayTop(10);
+            Console.Write("\nChoisissez le mode de jeu :\nJcJ (Joueur contre Joueur) ou IA (Joueur contre IA) ? ");
+            GameMode m_gameMode = GetGameMode(Console.ReadLine());
+            DisplayTop(10);
+
             Console.Write("La base doit être impaire\nDe combien est la base de votre jeu ? ");
             int _base = getImpairPositivNumber(Console.ReadLine());
             int lignes = (_base+1) / 2;
             int[] game = new int[lignes];
             FillTab(game, _base); // on remplit le tableau
-            Console.Write("Choisissez le niveau de difficulté de votre adversaire l'IA : ");
-            Difficulty _difficulty = GetDifficulty(Console.ReadLine());
-            m_winner = LaunchGame(game, m_gameState, _base, _difficulty);
+
+            m_winner = LaunchGame(game, m_gameState, _base, m_gameMode);
             Console.WriteLine("La partie est maintenant terminée ! Le vainqueur est : " + m_winner);
         }
         #endregion
 
         // Les fonctions standards
         #region FONCTIONS
+        // Parcours un tableau et retourne la somme de ses valeurs
+        private static int SommeTab(int[] tab)
+        {
+            int somme = 0;
+
+            for (int i = 0; i < tab.Length; i++)
+                somme += tab[i];
+
+            return somme;
+        }
 
         // Verification du tableau si full 0 ou pas
         private static State checkTab(int[] tab)
@@ -74,6 +95,32 @@ namespace Allumettes
             return nbZero;
         }
 
+        // Parcours un tableau et retourne le nombre de lignes différentes de 0
+        private static int HowManyNoneZeroTab(int[] tab)
+        {
+            int nbNoneZero = 0;
+            for (int i = 0; i < tab.Length; i++)
+            {
+                if (tab[i] != 0)
+                    nbNoneZero++;
+            }
+
+            return nbNoneZero;
+        }
+
+        // Parcours un tableau et retourne le nombre de lignes égales à 1
+        private static int HowManySingleTab(int[] tab)
+        {
+            int nbSingle = 0;
+            for (int i = 0; i < tab.Length; i++)
+            {
+                if (tab[i] == 1)
+                    nbSingle++;
+            }
+
+            return nbSingle;
+        }
+
         // On retire les allumettes du tableau à telle ligne de tel montant
         private static void pullBars(int[] tab, int line, int nb)
         {
@@ -95,12 +142,64 @@ namespace Allumettes
 
         // Le lancement du jeu et les program joueur + IA
         #region EXECUTIONS DU JEU
-        // Execution du jeu + décision du vainqueur
-        private static Winner LaunchGame(int[] tab, State gameState, int baseNB, Difficulty difficultyMode)
+        // Lancement du Jeu
+        private static Joueurs LaunchGame(int[] tab, State gameState, int baseNB, GameMode gameMode)
+        {
+            Joueurs gagnant = Joueurs.PLAYER1;
+
+            if (gameMode == GameMode.PVIA)
+            {
+                Console.Write("\nChoisissez le niveau de difficulté de votre adversaire l'IA.\nFacile, normal ou difficile ? ");
+                Difficulty _difficulty = GetDifficulty(Console.ReadLine());
+                gagnant = LaunchGameVsIA(tab, gameState, baseNB, _difficulty);
+            }
+            else
+                gagnant = LaunchGameJcJ(tab, gameState, baseNB);
+
+            return gagnant;
+        }
+
+        // Execution du jeu en mode JcJ + decision du vainqueur
+        private static Joueurs LaunchGameJcJ(int[] tab, State gameState, int baseNB)
         {
             bool tourDuJoueur1 = true;
-            Winner dernierJoueur = Winner.PLAYER1;
-            Winner gagnant = Winner.PLAYER1;
+            Joueurs dernierJoueur = Joueurs.PLAYER1;
+            Joueurs gagnant = Joueurs.PLAYER1;
+
+            DisplayGame(tab, baseNB);
+
+            while (gameState == State.PLAYING)
+            {
+                if (tourDuJoueur1 == true)
+                {
+                    humanPlay(tab, baseNB, Joueurs.PLAYER1);
+                    tourDuJoueur1 = false;
+                    dernierJoueur = Joueurs.PLAYER1;
+                }
+                else
+                {
+                    humanPlay(tab, baseNB, Joueurs.PLAYER2);
+                    tourDuJoueur1 = true;
+                    dernierJoueur = Joueurs.PLAYER2;
+                }
+                DisplayGame(tab, baseNB);
+                gameState = checkTab(tab);
+            }
+
+            if (dernierJoueur == Joueurs.PLAYER1)
+                gagnant = Joueurs.PLAYER2;
+            else
+                gagnant = Joueurs.PLAYER1;
+
+            return gagnant;
+        }
+
+        // Execution du jeu en mdoe vs IA + décision du vainqueur
+        private static Joueurs LaunchGameVsIA(int[] tab, State gameState, int baseNB, Difficulty difficultyMode)
+        {
+            bool tourDuJoueur1 = true;
+            Joueurs dernierJoueur = Joueurs.PLAYER1;
+            Joueurs gagnant = Joueurs.PLAYER1;
 
             DisplayGame(tab, baseNB);
 
@@ -108,32 +207,32 @@ namespace Allumettes
             {               
                 if(tourDuJoueur1 == true)
                 {
-                    humanPlay(tab, baseNB);
+                    humanPlay(tab, baseNB, dernierJoueur);
                     tourDuJoueur1 = false;
-                    dernierJoueur = Winner.PLAYER1;
+                    dernierJoueur = Joueurs.PLAYER1;
                 }
                 else
                 {
                     IAPlay(tab, baseNB, difficultyMode);
                     tourDuJoueur1 = true;
-                    dernierJoueur = Winner.IA;
+                    dernierJoueur = Joueurs.IA;
                 }
                 DisplayGame(tab, baseNB);
                 gameState = checkTab(tab);
             }
 
-            if (dernierJoueur == Winner.PLAYER1)
-                gagnant = Winner.IA;
+            if (dernierJoueur == Joueurs.PLAYER1)
+                gagnant = Joueurs.IA;
             else
-                gagnant = Winner.PLAYER1;
+                gagnant = Joueurs.PLAYER1;
 
             return gagnant;
         }
 
         // Tour du joueur de jouer
-        private static void humanPlay (int[] tab, int baseNB)
+        private static void humanPlay (int[] tab, int baseNB, Joueurs joueur)
         {
-            Console.Write("C'est à votre tour, sur quelle ligne voulez-vous retirer une allumette ? ");
+            Console.Write("C'est au tour du " + joueur + " sur quelle ligne voulez-vous retirer une allumette ? ");
             int WhatLine = (getLineNumber(Console.ReadLine(), (baseNB + 1)/2))-1;
 
             while(tab[WhatLine] == 0)
@@ -152,12 +251,12 @@ namespace Allumettes
         private static void IAPlay(int[] tab, int baseNB, Difficulty difficultyMode)
         {
             int nbDeLignes = (baseNB + 1) / 2;
-            int WhatLine;
-            int HowMany;
+            int WhatLine=0;
+            int HowMany=0;
 
-            /*int nbLignesPair = 0;
-            int nbLignesImpair = 0;
-            int nbLignesAvecUneSeuleBarre = 0;*/
+            bool nbDelignesIsImpair = isImpair(nbDeLignes);
+            bool nbLignesNonNulles_isImpair = isImpair(HowManyNoneZeroTab(tab));
+            int nbLignesSingleAllumette = HowManySingleTab(tab);
 
             Console.WriteLine("L'IA réfléchit ...");
             Thread.Sleep(2000);
@@ -176,18 +275,35 @@ namespace Allumettes
                 else
                     HowMany = rand.Next(1, tab[WhatLine-1]);
 
-                Console.WriteLine("L'IA a retiré " + HowMany + " allumettes sur la ligne " + WhatLine);
-
-                pullBars(tab, WhatLine-1, HowMany);
             }
-            /*else if (difficultyMode == Difficulty.MEDIUM)
+            else if (difficultyMode == Difficulty.HARD)
             {
+                // Si le nombre de lignes de base est impair
+                if (nbDelignesIsImpair == true)
+                {
+                    // Si le nombre de lignes non nulles est pair
+                    if (nbLignesNonNulles_isImpair == false)
+                    {
+                        Random rand = new Random();
+                        WhatLine = rand.Next(1, nbDeLignes);
 
+                        while (tab[WhatLine - 1] == 0 || tab[WhatLine - 1] == 1)
+                        {
+                            WhatLine = rand.Next(1, nbDeLignes);
+                        }
+
+                        HowMany = tab[WhatLine-1];
+                    }
+                }
+                else // Si le nombre de lignes de base est pair
+                {
+
+                }
             }
-            else
-            {
 
-            }*/
+            Console.WriteLine("L'IA a retiré " + HowMany + " allumettes sur la ligne " + WhatLine);
+
+            pullBars(tab, WhatLine - 1, HowMany);
         }
         #endregion
 
@@ -264,6 +380,21 @@ namespace Allumettes
 
         // Fonctions de lecture des entrées utilisateur ainsi que leur vérifications
         #region RECUPERATION ET VERIFICATION
+        // Récupération + vérification du mode de jeu
+        private static GameMode GetGameMode(string entry)
+        {
+            while (entry.ToLower() != "jcj" && entry.ToLower() != "ia")
+            {
+                Console.Write("Entrée incorrecte, veuillez écrire \"JcJ\" ou \"IA\"");
+                entry = Console.ReadLine();
+            }
+
+            if (entry.ToLower() == "jcj")
+                return GameMode.PVP;
+            else
+                return GameMode.PVIA;
+        }
+
         // Récupération + vérification de la difficulté de l'IA
         private static Difficulty GetDifficulty(string entry)
         {
@@ -277,10 +408,8 @@ namespace Allumettes
                 return Difficulty.EASY;
             else if (entry.ToLower() == "normal")
                 return Difficulty.MEDIUM;
-            else if (entry.ToLower() == "difficile")
+            else
                 return Difficulty.HARD;
-
-            return Difficulty.EASY;
         }
 
         // Récupération + vérification de la ligne dans la quelle retirer des allumettes
