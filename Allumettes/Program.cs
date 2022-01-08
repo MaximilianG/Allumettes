@@ -38,27 +38,92 @@ namespace Allumettes
         #region MAIN
         static void Main(string[] args)
         {
-            State m_gameState = State.PLAYING;
-            Joueurs m_winner;
-
-            DisplayTop(10);
-            Console.Write("\nChoisissez le mode de jeu :\nJcJ (Joueur contre Joueur) ou IA (Joueur contre IA) ? ");
-            GameMode m_gameMode = GetGameMode(Console.ReadLine());
-            DisplayTop(10);
-
-            Console.Write("La base doit être impaire\nDe combien est la base de votre jeu ? ");
-            int _base = getImpairPositivNumber(Console.ReadLine());
-            int lignes = (_base+1) / 2;
-            int[] game = new int[lignes];
-            FillTab(game, _base); // on remplit le tableau
-
-            m_winner = LaunchGame(game, m_gameState, _base, m_gameMode);
-            Console.WriteLine("La partie est maintenant terminée ! Le vainqueur est : " + m_winner);
+            Setup();
         }
         #endregion
 
         // Les fonctions standards
         #region FONCTIONS
+        // Indique les boites de puissance de 2 de chaque ligne dans un tableau (avec un entier 1 et le reste 0)
+        private static void sortTab(int[,] exitTab, int[] sourceTab)
+        {
+            for(int i=0; i<sourceTab.Length; i++)
+            {
+                for(int j=0;j<4; j++)
+                    exitTab[i, j] = 0;              
+            }
+
+            for(int i=0; i<sourceTab.Length; i++)
+            {
+                if (puissanceDeuxMax(sourceTab[i]) == 3)
+                {
+                    exitTab[i, 3] = 1;
+                    if(sourceTab[i]-8 > 0)
+                    {
+                        if (puissanceDeuxMax(sourceTab[i]) == 2)
+                        {
+                            exitTab[i, 2] = 1;
+                            if (sourceTab[i] - 12 > 0)
+                            {
+                                if (puissanceDeuxMax(sourceTab[i]) == 1)
+                                {
+                                    exitTab[i, 1] = 1;
+                                    if (sourceTab[i] - 14 > 0)
+                                    {
+                                        if (puissanceDeuxMax(sourceTab[i]) == 0)
+                                            exitTab[i, 0] = 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (puissanceDeuxMax(sourceTab[i]) == 2)
+                    {
+                        exitTab[i, 2] = 1;
+                        if (sourceTab[i] - 4 > 0)
+                        {
+                            if (puissanceDeuxMax(sourceTab[i]) == 1)
+                            {
+                                exitTab[i, 1] = 1;
+                                if (sourceTab[i] - 6 > 0)
+                                {
+                                    if (puissanceDeuxMax(sourceTab[i]) == 0)
+                                        exitTab[i, 0] = 1;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (puissanceDeuxMax(sourceTab[i]) == 1)
+                        {
+                            exitTab[i, 1] = 1;
+                            if (sourceTab[i] - 2 > 0)
+                            {
+                                if (puissanceDeuxMax(sourceTab[i]) == 0)
+                                    exitTab[i, 0] = 1;
+                            }
+                        }
+                        else
+                        {
+                            if (puissanceDeuxMax(sourceTab[i]) == 0)
+                                exitTab[i, 0] = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static int puissanceDeuxMax(int x)
+        {
+            double puissance = Math.Log2((double)x);
+
+            return (int)puissance;
+        }
+
         // Parcours un tableau et retourne la somme de ses valeurs
         private static int SommeTab(int[] tab)
         {
@@ -66,6 +131,18 @@ namespace Allumettes
 
             for (int i = 0; i < tab.Length; i++)
                 somme += tab[i];
+
+            return somme;
+        }
+
+        private static int SommePuissance(int[,] tab, int x, int taille)
+        {
+            int somme = 0;
+
+            for(int i=0; i< taille; i++)
+            {
+                somme = somme + tab[i, x];
+            }
 
             return somme;
         }
@@ -138,10 +215,32 @@ namespace Allumettes
                 nbBase = nbBase - 2;
             }
         }
+
         #endregion
 
         // Le lancement du jeu et les program joueur + IA
         #region EXECUTIONS DU JEU
+        //setup du jeu
+        private static void Setup()
+        {
+            State m_gameState = State.PLAYING;
+            Joueurs m_winner;
+
+            DisplayTop(10);
+            Console.Write("\nChoisissez le mode de jeu :\nJcJ (Joueur contre Joueur) ou IA (Joueur contre IA) ? ");
+            GameMode m_gameMode = GetGameMode(Console.ReadLine());
+            DisplayTop(10);
+
+            Console.Write("La base doit être impaire et au maximum de 15\nDe combien est la base de votre jeu ? ");
+            int _base = getImpairPositivNumber(Console.ReadLine());
+            int lignes = (_base + 1) / 2;
+            int[] game = new int[lignes];
+            FillTab(game, _base); // on remplit le tableau
+
+            m_winner = LaunchGame(game, m_gameState, _base, m_gameMode);
+            Console.WriteLine("La partie est maintenant terminée ! Le vainqueur est : " + m_winner);
+        }
+
         // Lancement du Jeu
         private static Joueurs LaunchGame(int[] tab, State gameState, int baseNB, GameMode gameMode)
         {
@@ -245,6 +344,7 @@ namespace Allumettes
             int howMany = getLineNumber(Console.ReadLine(), tab[WhatLine]);
 
             pullBars(tab, WhatLine, howMany);
+            Console.Clear();
         }
 
         // Tour de l'IA de jouer
@@ -253,10 +353,17 @@ namespace Allumettes
             int nbDeLignes = (baseNB + 1) / 2;
             int WhatLine=0;
             int HowMany=0;
+            int[,] sortedGame = new int[tab.Length, 4];
+            sortTab(sortedGame,tab);
+            int nbPuissance3 = SommePuissance(sortedGame, 3, tab.Length);
+            int nbPuissance2 = SommePuissance(sortedGame, 2, tab.Length);
+            int nbPuissance1 = SommePuissance(sortedGame, 1, tab.Length);
+            int nbPuissance0 = SommePuissance(sortedGame, 0, tab.Length);
 
             bool nbDelignesIsImpair = isImpair(nbDeLignes);
             bool nbLignesNonNulles_isImpair = isImpair(HowManyNoneZeroTab(tab));
             int nbLignesSingleAllumette = HowManySingleTab(tab);
+
 
             Console.WriteLine("L'IA réfléchit ...");
             Thread.Sleep(2000);
@@ -264,11 +371,11 @@ namespace Allumettes
             if (difficultyMode == Difficulty.EASY)
             {
                 Random rand = new Random();
-                WhatLine = rand.Next(1, nbDeLignes);
+                WhatLine = rand.Next(1, nbDeLignes+1);
 
                 while (tab[WhatLine-1] == 0)
                 {                    
-                    WhatLine = rand.Next(1, nbDeLignes);
+                    WhatLine = rand.Next(1, nbDeLignes+1);
                 }
                 if (tab[WhatLine - 1] == 1)
                     HowMany = 1;
@@ -278,33 +385,100 @@ namespace Allumettes
             }
             else if (difficultyMode == Difficulty.HARD)
             {
-                // Si le nombre de lignes de base est impair
-                if (nbDelignesIsImpair == true)
+                bool found = false;
+
+                if(isImpair(nbPuissance3) == false && isImpair(nbPuissance2) == false && isImpair(nbPuissance1) == false && isImpair(nbPuissance0) == false)
                 {
-                    // Si le nombre de lignes non nulles est pair
-                    if (nbLignesNonNulles_isImpair == false)
+                    Random rand = new Random();
+                    WhatLine = rand.Next(1, nbDeLignes + 1);
+
+                    while (tab[WhatLine - 1] == 0)
                     {
-                        Random rand = new Random();
-                        WhatLine = rand.Next(1, nbDeLignes);
+                        WhatLine = rand.Next(1, nbDeLignes + 1);
+                    }
+                    if (tab[WhatLine - 1] == 1)
+                        HowMany = 1;
+                    else
+                        HowMany = rand.Next(1, tab[WhatLine - 1]);
+                }
 
-                        while (tab[WhatLine - 1] == 0 || tab[WhatLine - 1] == 1)
+                if (isImpair(nbPuissance3) == true)
+                {         
+                    while(found == false)
+                    {
+                        for (int i = tab.Length - 1; i >= 0; i--)
                         {
-                            WhatLine = rand.Next(1, nbDeLignes);
+                            if (sortedGame[i, 3] == 1)
+                            {
+                                WhatLine = i + 1;
+                                HowMany = 8;
+                                found = true;
+                            }
                         }
-
-                        HowMany = tab[WhatLine-1];
                     }
                 }
-                else // Si le nombre de lignes de base est pair
+                else
                 {
-
+                    if (isImpair(nbPuissance2) == true)
+                    {
+                        while (found == false)
+                        {
+                            for (int i = tab.Length - 1; i >= 0; i--)
+                            {
+                                if (sortedGame[i, 2] == 1)
+                                {
+                                    WhatLine = i + 1;
+                                    HowMany = 4;
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (isImpair(nbPuissance1) == true)
+                        {
+                            while (found == false)
+                            {
+                                for (int i = tab.Length - 1; i >= 0; i--)
+                                {
+                                    if (sortedGame[i, 1] == 1)
+                                    {
+                                        WhatLine = i + 1;
+                                        HowMany = 2;
+                                        found = true;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (isImpair(nbPuissance0) == true)
+                            {
+                                while (found == false)
+                                {
+                                    for (int i = tab.Length - 1; i >= 0; i--)
+                                    {
+                                        if (sortedGame[i, 0] == 1)
+                                        {
+                                            WhatLine = i + 1;
+                                            HowMany = 1;
+                                            found = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
+            Console.Clear();
             Console.WriteLine("L'IA a retiré " + HowMany + " allumettes sur la ligne " + WhatLine);
 
             pullBars(tab, WhatLine - 1, HowMany);
-        }
+            
+        } 
         #endregion
 
         // Les fonctions d'affichages des espaces, allumettes, tirets, etc .. (mise en forme visuel)
@@ -438,14 +612,18 @@ namespace Allumettes
             bool state = int.TryParse(entry, out int q);
             bool positiv = isPositiv(q);
             bool impair = isImpair(q);
+            bool smaller = isSmaller(q,15);
 
-            while (state == false || positiv == false || impair == false)
+
+
+            while (state == false || positiv == false || impair == false || smaller == false)
             {
-                Console.Write("Valeur entrée incorrecte, veuillez entrer un nombre POSITIF IMPAIRE: ");
+                Console.Write("Valeur entrée incorrecte, veuillez entrer un nombre POSITIF IMPAIRE et PLUS PETIT OU EGAL A 15 : ");
                 entry = Console.ReadLine();
                 state = int.TryParse(entry, out q);
                 positiv = isPositiv(q);
                 impair = isImpair(q);
+                smaller = isSmaller(q, 15);
             }
 
             return q;
