@@ -22,15 +22,21 @@ namespace Allumettes
 
         public enum Joueurs
         {
-            PLAYER1 = 0,
+            PLAYER_1 = 0,
             IA = 1,
-            PLAYER2 = 2
+            PLAYER_2 = 2
         }
 
         public enum GameMode
         {
             PVIA= 0, // mode contre l'IA
             PVP = 1 // Mode joueur contre joueur
+        }
+
+        public enum GameTime
+        {
+            EARLYGAME = 0,
+            ENDGAME = 1
         }
         #endregion
 
@@ -58,22 +64,36 @@ namespace Allumettes
                 if (puissanceDeuxMax(sourceTab[i]) == 3)
                 {
                     exitTab[i, 3] = 1;
-                    if(sourceTab[i]-8 > 0)
+                    if(sourceTab[i] - 8 > 0)
                     {
-                        if (puissanceDeuxMax(sourceTab[i]) == 2)
+                        if (puissanceDeuxMax(sourceTab[i]-8) == 2)
                         {
                             exitTab[i, 2] = 1;
                             if (sourceTab[i] - 12 > 0)
                             {
-                                if (puissanceDeuxMax(sourceTab[i]) == 1)
+                                if (puissanceDeuxMax(sourceTab[i]-12) == 1)
                                 {
                                     exitTab[i, 1] = 1;
                                     if (sourceTab[i] - 14 > 0)
                                     {
-                                        if (puissanceDeuxMax(sourceTab[i]) == 0)
                                             exitTab[i, 0] = 1;
                                     }
                                 }
+                            }
+                        }
+                        else 
+                        {
+                            if (puissanceDeuxMax(sourceTab[i] - 8) == 1)
+                            {
+                                exitTab[i, 1] = 1;
+                                if (sourceTab[i] - 10 > 0)
+                                {
+                                        exitTab[i, 0] = 1;
+                                }
+                            }
+                            else
+                            {
+                                exitTab[i, 0] = 1;
                             }
                         }
                     }
@@ -85,14 +105,17 @@ namespace Allumettes
                         exitTab[i, 2] = 1;
                         if (sourceTab[i] - 4 > 0)
                         {
-                            if (puissanceDeuxMax(sourceTab[i]) == 1)
+                            if (puissanceDeuxMax(sourceTab[i]-4) == 1)
                             {
                                 exitTab[i, 1] = 1;
                                 if (sourceTab[i] - 6 > 0)
                                 {
-                                    if (puissanceDeuxMax(sourceTab[i]) == 0)
                                         exitTab[i, 0] = 1;
                                 }
+                            }
+                            else
+                            {
+                                exitTab[i, 0] = 1;
                             }
                         }
                     }
@@ -103,13 +126,12 @@ namespace Allumettes
                             exitTab[i, 1] = 1;
                             if (sourceTab[i] - 2 > 0)
                             {
-                                if (puissanceDeuxMax(sourceTab[i]) == 0)
                                     exitTab[i, 0] = 1;
                             }
                         }
                         else
                         {
-                            if (puissanceDeuxMax(sourceTab[i]) == 0)
+                            if (sourceTab[i]>0)
                                 exitTab[i, 0] = 1;
                         }
                     }
@@ -130,7 +152,7 @@ namespace Allumettes
             int somme = 0;
 
             for (int i = 0; i < tab.Length; i++)
-                somme += tab[i];
+                somme = somme + tab[i];
 
             return somme;
         }
@@ -204,6 +226,12 @@ namespace Allumettes
             tab[line] = tab[line] - nb;
         }
 
+        // On remet les allumettes du tableau à telle ligne de tel montant (contraire de pullBars)
+        private static void addBars(int[] tab, int line, int nb)
+        {
+            tab[line] = tab[line] + nb;
+        }
+
         // Remplissage du tableau de jeu
         private static void FillTab(int[] tab, int baseNB)
         {
@@ -214,6 +242,20 @@ namespace Allumettes
                 tab[i] = nbBase;
                 nbBase = nbBase - 2;
             }
+        }
+
+        // check si tab des paquets de puissances de 2 est équilibré ou non
+        private static bool checkBalance(int[,] tab, int size)
+        {
+            bool balance = false;
+
+            if (isImpair(SommePuissance(tab, 0, size)) == false &&
+                isImpair(SommePuissance(tab, 1, size)) == false &&
+                isImpair(SommePuissance(tab, 2, size)) == false &&
+                isImpair(SommePuissance(tab, 3, size)) == false)
+                balance = true;
+
+            return balance;
         }
 
         #endregion
@@ -244,7 +286,7 @@ namespace Allumettes
         // Lancement du Jeu
         private static Joueurs LaunchGame(int[] tab, State gameState, int baseNB, GameMode gameMode)
         {
-            Joueurs gagnant = Joueurs.PLAYER1;
+            Joueurs gagnant = Joueurs.PLAYER_1;
 
             if (gameMode == GameMode.PVIA)
             {
@@ -262,8 +304,8 @@ namespace Allumettes
         private static Joueurs LaunchGameJcJ(int[] tab, State gameState, int baseNB)
         {
             bool tourDuJoueur1 = true;
-            Joueurs dernierJoueur = Joueurs.PLAYER1;
-            Joueurs gagnant = Joueurs.PLAYER1;
+            Joueurs dernierJoueur = Joueurs.PLAYER_1;
+            Joueurs gagnant = Joueurs.PLAYER_1;
 
             DisplayGame(tab, baseNB);
 
@@ -271,24 +313,24 @@ namespace Allumettes
             {
                 if (tourDuJoueur1 == true)
                 {
-                    humanPlay(tab, baseNB, Joueurs.PLAYER1);
+                    humanPlay(tab, baseNB, Joueurs.PLAYER_1);
                     tourDuJoueur1 = false;
-                    dernierJoueur = Joueurs.PLAYER1;
+                    dernierJoueur = Joueurs.PLAYER_1;
                 }
                 else
                 {
-                    humanPlay(tab, baseNB, Joueurs.PLAYER2);
+                    humanPlay(tab, baseNB, Joueurs.PLAYER_2);
                     tourDuJoueur1 = true;
-                    dernierJoueur = Joueurs.PLAYER2;
+                    dernierJoueur = Joueurs.PLAYER_2;
                 }
                 DisplayGame(tab, baseNB);
                 gameState = checkTab(tab);
             }
 
-            if (dernierJoueur == Joueurs.PLAYER1)
-                gagnant = Joueurs.PLAYER2;
+            if (dernierJoueur == Joueurs.PLAYER_1)
+                gagnant = Joueurs.PLAYER_2;
             else
-                gagnant = Joueurs.PLAYER1;
+                gagnant = Joueurs.PLAYER_1;
 
             return gagnant;
         }
@@ -297,8 +339,8 @@ namespace Allumettes
         private static Joueurs LaunchGameVsIA(int[] tab, State gameState, int baseNB, Difficulty difficultyMode)
         {
             bool tourDuJoueur1 = true;
-            Joueurs dernierJoueur = Joueurs.PLAYER1;
-            Joueurs gagnant = Joueurs.PLAYER1;
+            Joueurs dernierJoueur = Joueurs.PLAYER_1;
+            Joueurs gagnant = Joueurs.PLAYER_1;
 
             DisplayGame(tab, baseNB);
 
@@ -308,7 +350,7 @@ namespace Allumettes
                 {
                     humanPlay(tab, baseNB, dernierJoueur);
                     tourDuJoueur1 = false;
-                    dernierJoueur = Joueurs.PLAYER1;
+                    dernierJoueur = Joueurs.PLAYER_1;
                 }
                 else
                 {
@@ -320,10 +362,10 @@ namespace Allumettes
                 gameState = checkTab(tab);
             }
 
-            if (dernierJoueur == Joueurs.PLAYER1)
+            if (dernierJoueur == Joueurs.PLAYER_1)
                 gagnant = Joueurs.IA;
             else
-                gagnant = Joueurs.PLAYER1;
+                gagnant = Joueurs.PLAYER_1;
 
             return gagnant;
         }
@@ -350,15 +392,21 @@ namespace Allumettes
         // Tour de l'IA de jouer
         private static void IAPlay(int[] tab, int baseNB, Difficulty difficultyMode)
         {
+            GameTime _gametime = GameTime.EARLYGAME;
+
             int nbDeLignes = (baseNB + 1) / 2;
             int WhatLine=0;
             int HowMany=0;
             int[,] sortedGame = new int[tab.Length, 4];
             sortTab(sortedGame,tab);
-            int nbPuissance3 = SommePuissance(sortedGame, 3, tab.Length);
-            int nbPuissance2 = SommePuissance(sortedGame, 2, tab.Length);
-            int nbPuissance1 = SommePuissance(sortedGame, 1, tab.Length);
-            int nbPuissance0 = SommePuissance(sortedGame, 0, tab.Length);
+            int nbPuissance3;
+            nbPuissance3 = SommePuissance(sortedGame, 3, tab.Length);
+            int nbPuissance2;
+            nbPuissance2 = SommePuissance(sortedGame, 2, tab.Length);
+            int nbPuissance1;
+            nbPuissance1 = SommePuissance(sortedGame, 1, tab.Length);
+            int nbPuissance0;
+            nbPuissance0 = SommePuissance(sortedGame, 0, tab.Length);
 
             bool nbDelignesIsImpair = isImpair(nbDeLignes);
             bool nbLignesNonNulles_isImpair = isImpair(HowManyNoneZeroTab(tab));
@@ -371,55 +419,83 @@ namespace Allumettes
             if (difficultyMode == Difficulty.EASY)
             {
                 Random rand = new Random();
-                WhatLine = rand.Next(1, nbDeLignes+1);
+                WhatLine = rand.Next(1, nbDeLignes + 1);
 
-                while (tab[WhatLine-1] == 0)
-                {                    
-                    WhatLine = rand.Next(1, nbDeLignes+1);
+                while (tab[WhatLine - 1] == 0)
+                {
+                    WhatLine = rand.Next(1, nbDeLignes + 1);
                 }
                 if (tab[WhatLine - 1] == 1)
                     HowMany = 1;
                 else
-                    HowMany = rand.Next(1, tab[WhatLine-1]);
+                    HowMany = rand.Next(1, tab[WhatLine - 1]);
 
-            }
-            else if (difficultyMode == Difficulty.HARD)
+            } //---------------------------------- MODE MEDIUM -------------------------------------------------------
+            else if (difficultyMode == Difficulty.MEDIUM)
             {
                 bool found = false;
 
-                if(isImpair(nbPuissance3) == false && isImpair(nbPuissance2) == false && isImpair(nbPuissance1) == false && isImpair(nbPuissance0) == false)
+                if (isImpair(HowManySingleTab(tab)) == false && (HowManyNoneZeroTab(tab) - HowManySingleTab(tab)) == 1 ) // si le nombre de lignes de 1 seule allumette est PAIR ET qu'UNE SEULE AUTRE LIGNE A PLUSIEURS ALUMETTES
+                    _gametime = GameTime.ENDGAME;
+
+                if ( _gametime == GameTime.EARLYGAME)
                 {
-                    Random rand = new Random();
-                    WhatLine = rand.Next(1, nbDeLignes + 1);
-
-                    while (tab[WhatLine - 1] == 0)
+                    if (isImpair(nbPuissance3) == false && isImpair(nbPuissance2) == false && isImpair(nbPuissance1) == false && isImpair(nbPuissance0) == false && found == false)
                     {
-                        WhatLine = rand.Next(1, nbDeLignes + 1);
-                    }
-                    if (tab[WhatLine - 1] == 1)
                         HowMany = 1;
-                    else
-                        HowMany = rand.Next(1, tab[WhatLine - 1]);
-                }
+                        WhatLine = tab.Length;
+                    }
 
-                if (isImpair(nbPuissance3) == true)
-                {         
-                    while(found == false)
+                    if(isImpair(nbPuissance3) == true && found == false)
                     {
-                        for (int i = tab.Length - 1; i >= 0; i--)
+                        if (isImpair(nbPuissance2) == false && isImpair(nbPuissance1) == false && isImpair(nbPuissance0) == false)
                         {
-                            if (sortedGame[i, 3] == 1)
+                            for (int i = tab.Length - 1; i >= 0; i--) // Je parcours le jeu de bas en haut
                             {
-                                WhatLine = i + 1;
-                                HowMany = 8;
-                                found = true;
+                                if (sortedGame[i, 3] == 1) // si le tab rangé possède un 1 en case 3 (donc possède 8 allumettes mini)
+                                {
+                                    WhatLine = i + 1; // je valide la ligne 
+                                    HowMany = 8; // Je valide 8 comme nombre d'allumettes à retirer
+                                    found = true; // j'ai trouvé donc je set la variable pour sortir de la boucle
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if(isImpair(nbPuissance0) == true)
+                            {
+                                HowMany = 7;
+                                for (int i = tab.Length - 1; i >= 0; i--)
+                                {
+                                    if(isImpair(sortedGame[i,0]) == true)
+                                    {
+                                        WhatLine = i;
+                                    }
+                                }
+                            }
+
+                        }
+
+                    
+                    }
+
+                    if (isImpair(nbPuissance3) == true && found == false) // si le nombre de paquet de 8 est impaire
+                    {
+                        while (found == false)
+                        {
+                            for (int i = tab.Length - 1; i >= 0; i--) // Je parcours le jeu de bas en haut
+                            {
+                                if (sortedGame[i, 3] == 1) // si le tab rangé possède un 1 en case 3 (donc possède 8 allumettes mini)
+                                {
+                                    WhatLine = i + 1; // je valide la ligne 
+                                    HowMany = 8; // Je valide 8 comme nombre d'allumettes à retirer
+                                    found = true; // j'ai trouvé donc je set la variable pour sortir de la boucle
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    if (isImpair(nbPuissance2) == true)
+
+                    if (isImpair(nbPuissance2) == true && found == false)
                     {
                         while (found == false)
                         {
@@ -434,44 +510,87 @@ namespace Allumettes
                             }
                         }
                     }
-                    else
+
+                    if (isImpair(nbPuissance1) == true && found == false)
                     {
-                        if (isImpair(nbPuissance1) == true)
+                        while (found == false)
                         {
-                            while (found == false)
+                            for (int i = tab.Length - 1; i >= 0; i--)
                             {
-                                for (int i = tab.Length - 1; i >= 0; i--)
+                                if (sortedGame[i, 1] == 1)
                                 {
-                                    if (sortedGame[i, 1] == 1)
-                                    {
-                                        WhatLine = i + 1;
-                                        HowMany = 2;
-                                        found = true;
-                                    }
+                                    WhatLine = i + 1;
+                                    HowMany = 2;
+                                    found = true;
                                 }
                             }
                         }
-                        else
+                    }
+
+                    if (isImpair(nbPuissance0) == true && found == false)
+                    {
+                        while (found == false)
                         {
-                            if (isImpair(nbPuissance0) == true)
+                            for (int i = tab.Length - 1; i >= 0; i--)
                             {
-                                while (found == false)
+                                if (sortedGame[i, 0] == 1)
                                 {
-                                    for (int i = tab.Length - 1; i >= 0; i--)
-                                    {
-                                        if (sortedGame[i, 0] == 1)
-                                        {
-                                            WhatLine = i + 1;
-                                            HowMany = 1;
-                                            found = true;
-                                        }
-                                    }
+                                    WhatLine = i + 1;
+                                    HowMany = 1;
+                                    found = true;
                                 }
                             }
                         }
                     }
                 }
+                else // SI ON EST EN ENDGAME    
+                {
+                    for(int i=0; i < tab.Length; i++)
+                    {
+                        if (tab[i] > 1)
+                        {
+                            WhatLine = i + 1;
+                            HowMany = tab[i] - 1;
+                            found = true;
+                        }
+                    }
+                }
             }
+            else if(difficultyMode == Difficulty.HARD)
+            {
+
+                int[] copieTab = tab;
+
+                int[,] copieSortedGame = sortedGame;
+
+                if (checkBalance(sortedGame, tab.Length) == true) // si le tableau est équilibré au début de notre tour de jeu, on enlève seulement une allumette aléatoirement
+                {
+                    Random rand = new Random();
+                    WhatLine = rand.Next(1, nbDeLignes + 1);
+
+                    while (tab[WhatLine - 1] == 0)
+                    {
+                        WhatLine = rand.Next(1, nbDeLignes + 1);
+                    }
+
+                    HowMany = 1;
+                }
+                else // faire une simulation de retraits d'allumettes jusqu'à ce qu'en un seul moove, checkbalance retourne TRUE
+                {
+                    bool found = false;
+                    int nbAlu = 1;
+                    int l = 0;
+
+                    while (checkBalance(copieSortedGame, tab.Length) == false || found == false)
+                    {
+                        
+
+                        pullBars(copieTab, l, nbAlu);                        
+                        sortTab(copieSortedGame, copieTab);
+                    }
+                }
+            }
+ 
 
             Console.Clear();
             Console.WriteLine("L'IA a retiré " + HowMany + " allumettes sur la ligne " + WhatLine);
