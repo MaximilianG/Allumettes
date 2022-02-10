@@ -139,7 +139,7 @@ namespace Allumettes
             }
         }
 
-        private static int puissanceDeuxMax(int x)
+        private static int puissanceDeuxMax(int x) //retourne la puissance max de 2 d'une valeur
         {
             double puissance = Math.Log2((double)x);
 
@@ -558,37 +558,128 @@ namespace Allumettes
             }
             else if(difficultyMode == Difficulty.HARD)
             {
+                _gametime = GameTime.EARLYGAME; 
 
-                int[] copieTab = tab;
+                int[] copieTab = new int[tab.Length];
+                Array.Copy(tab, copieTab, tab.Length);               
 
-                int[,] copieSortedGame = sortedGame;
+                int[,] copieSortedGame = new int[tab.Length,4];
+                Array.Copy(sortedGame, copieSortedGame, tab.Length);
 
-                if (checkBalance(sortedGame, tab.Length) == true) // si le tableau est équilibré au début de notre tour de jeu, on enlève seulement une allumette aléatoirement
+                if (nbLignesNonNulles_isImpair == false) // s'il reste que deux lignes non nulles
+                    _gametime = GameTime.ENDGAME;
+
+                if(_gametime == GameTime.EARLYGAME)
                 {
-                    Random rand = new Random();
-                    WhatLine = rand.Next(1, nbDeLignes + 1);
-
-                    while (tab[WhatLine - 1] == 0)
+                    if (checkBalance(sortedGame, tab.Length) == true) // si le tableau est équilibré au début de notre tour de jeu, on enlève seulement une allumette aléatoirement
                     {
+                        Random rand = new Random();
                         WhatLine = rand.Next(1, nbDeLignes + 1);
+
+                        while (tab[WhatLine - 1] == 0)
+                        {
+                            WhatLine = rand.Next(1, nbDeLignes + 1);
+                        }
+
+                        HowMany = 1;
                     }
-
-                    HowMany = 1;
-                }
-                else // faire une simulation de retraits d'allumettes jusqu'à ce qu'en un seul moove, checkbalance retourne TRUE
-                {
-                    bool found = false;
-                    int nbAlu = 1;
-                    int l = 0;
-
-                    while (checkBalance(copieSortedGame, tab.Length) == false || found == false)
+                    else // faire une simulation de retraits d'allumettes jusqu'à ce qu'en un seul moove, checkbalance retourne TRUE
                     {
-                        
+                        bool found = false;
+                        int i = 0;
+                        int j = 1;
 
-                        pullBars(copieTab, l, nbAlu);                        
-                        sortTab(copieSortedGame, copieTab);
+                        while (i<copieTab.Length || found == false)
+                        {
+                            Array.Copy(tab, copieTab, tab.Length);
+                            Array.Copy(sortedGame, copieSortedGame, tab.Length);
+
+                            if (tab[i] == 0 && i< copieTab.Length-1)
+                                i++;
+
+                            while (j<=tab[i] && found == false && copieTab[i]>=0)
+                            {
+                                Array.Copy(tab, copieTab, tab.Length);
+                                Array.Copy(sortedGame, copieSortedGame, tab.Length);
+
+                                pullBars(copieTab, i, j);
+                                sortTab(copieSortedGame, copieTab);
+                            
+                                if (checkBalance(copieSortedGame, tab.Length) == true)
+                                {
+                                    found = true;
+                                    HowMany = j;
+                                    WhatLine = i + 1;
+                                }
+                                else
+                                {
+                                    j++;
+                                }
+                            }
+
+                            j = 1;
+                            i++;
+                        }
+                    }
+
+                }
+                else // Si endgame
+                {
+                    // si une des deux lignes = 1, on clear l'autre
+                    if (nbLignesSingleAllumette == 1)
+                    {
+                        for(int i=0; i<tab.Length; i++)
+                        {
+                            if (tab[i] >= 2)
+                            {
+                                WhatLine = i + 1;
+                                HowMany = tab[i];
+                            }
+                        }
+                    }
+
+                    // si les deux lignes sont supérieurs à 1, on équilibre.
+
+                    if (nbLignesSingleAllumette == 0)
+                    {
+                        bool found = false;
+                        int i = 0;
+                        int j = 1;
+
+                        while (i < copieTab.Length || found == false)
+                        {
+                            Array.Copy(tab, copieTab, tab.Length);
+                            Array.Copy(sortedGame, copieSortedGame, tab.Length);
+
+                            if (tab[i] == 0 && i < copieTab.Length - 1)
+                                i++;
+
+                            while (j <= tab[i] && found == false && copieTab[i] >= 0)
+                            {
+                                Array.Copy(tab, copieTab, tab.Length);
+                                Array.Copy(sortedGame, copieSortedGame, tab.Length);
+
+                                pullBars(copieTab, i, j);
+                                sortTab(copieSortedGame, copieTab);
+
+                                if (checkBalance(copieSortedGame, tab.Length) == true)
+                                {
+                                    found = true;
+                                    HowMany = j;
+                                    WhatLine = i + 1;
+                                }
+                                else
+                                {
+                                    j++;
+                                }
+                            }
+
+                            j = 1;
+                            i++;
+                        }
                     }
                 }
+
             }
  
 
